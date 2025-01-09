@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <nlohmann/json.hpp>
 #include <iostream>
 #include <thread>
 #include <stdio.h>
@@ -52,6 +53,15 @@ int main() {
     std::string message;
     while (1) {
         std::getline(std::cin, message);
+        nlohmann::json j;
+        j["command"] = "CHAT"; // Set command to chat
+        j["length"] = message.length(); // Set length to message length
+        j["sender"] = sockfd;
+        j["recipient"] = "ALL"; // ALL because right now this is broadcasting to everyone
+        j["payload"] = message;
+
+        message = j.dump();
+
         send(sockfd, message.c_str(), message.length(), 0);
     }
 

@@ -11,11 +11,12 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <nlohmann/json.hpp>
 
 #define PORT 8080
 
 std::vector<int> clients;
-
+std::unordered_map<std::string, int> map;
 std::mutex client_mutex;
 
 void send_message(const std::string& message, int sender_sockfd) {
@@ -28,9 +29,11 @@ void send_message(const std::string& message, int sender_sockfd) {
 
 void handle_client(int client_sockfd) {
     char buffer[1024];
+
     while (1) {
         memset(buffer, 0, sizeof(buffer));
         int buffer_length = recv(client_sockfd, buffer, sizeof(buffer) - 1, 0);
+
         if (buffer_length <= 0) {
             std::cout << "User disconnected." << std::endl;
             std::lock_guard<std::mutex> lock(client_mutex);
@@ -39,8 +42,12 @@ void handle_client(int client_sockfd) {
             break;
         }
 
-        printf("RECV (%d bytes): %s\n", buffer_length, buffer);
-        send_message(buffer, client_sockfd);
+        nlohmann::json j = nlohmann::json::parse(buffer);
+        std::string message = j.at("payload");
+        std::cout << "Payload is " << message << std::endl;
+
+        printf("RECV (%d bytes): %s\n", (int)message.length(), message.c_str());
+        send_message(message, client_sockfd);
     }
 }
 
